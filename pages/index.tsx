@@ -6,4 +6,7 @@ const Blowup = () => {
   return <div>This page should throw an exception {nonExistentItem}</div>;
 };
 
+// add getInitialProps to prevent prerendering and use server-side rendering instead
+Blowup.getInitialProps = async () => ({});
+
 export default Blowup;
