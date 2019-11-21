@@ -1,5 +1,9 @@
 import React from "react";
 
-const Home = () => <div>Home</div>;
+const Blowup = () => {
+  const emptyArr: any[] = [];
+  const nonExistentItem = emptyArr[0].something;
+  return <div>This page should throw an exception {nonExistentItem}</div>;
+};
 
-export default Home;
+export default Blowup;
