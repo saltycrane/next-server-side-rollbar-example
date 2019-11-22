@@ -4,7 +4,6 @@ const Rollbar = require("rollbar");
 
 /**
  * forked from https://github.com/zeit/next.js/issues/1852#issuecomment-353671222
- * (needed to add `async` keyword)
  */
 function installRollbarErrorHandler(app) {
   const _renderErrorToHTML = app.renderErrorToHTML.bind(app);
@@ -12,11 +11,9 @@ function installRollbarErrorHandler(app) {
     accessToken: "insert rollbar post_server_item token here",
     captureUncaught: true,
     captureUnhandledRejections: true,
-    environment: "development",
-    enabled: true,
   });
   const errorHandler = rollbar.errorHandler();
-  app.renderErrorToHTML = async (err, req, res, pathname, query) => {
+  app.renderErrorToHTML = (err, req, res, pathname, query) => {
     if (err) {
       errorHandler(err, req, res, () => {});
     }

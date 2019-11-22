@@ -1,13 +1,96 @@
-import React from "react";
+import React, { Component, useState } from "react";
+import Rollbar from "rollbar";
 
-const Blowup = () => {
-  const emptyArr: any[] = [];
-  const nonExistentItem = emptyArr[0].something;
-  return <div>This page should throw an exception {nonExistentItem}</div>;
+type Props = {
+  children: React.ReactNode;
 };
 
-// add getInitialProps to prevent prerendering and use server-side rendering instead
-// https://github.com/zeit/next.js/tree/v9.1.4#automatic-static-optimization
-Blowup.getInitialProps = async () => ({});
+/**
+ * This `ErrorBoundary` component is needed to report the error from
+ * `ComponentRenderBlowup`. (It is not needed for server-side error reporting or
+ * client-side event handler reporting.)
+ * See https://reactjs.org/docs/error-boundaries.html
+ */
+class ErrorBoundary extends Component<Props> {
+  state = {
+    errorCode: "",
+    hasError: false,
+    rollbar: new Rollbar({
+      accessToken: "insert rollbar post_client_item token here",
+      captureUncaught: true,
+      captureUnhandledRejections: true,
+    }),
+  };
 
-export default Blowup;
+  static getDerivedStateFromError() {
+    return {
+      errorCode: Math.random()
+        .toString(36)
+        .slice(2, 6),
+      hasError: true,
+    };
+  }
+
+  componentDidCatch(error: Error) {
+    const { errorCode, rollbar } = this.state;
+    rollbar.error(`${errorCode} ${String(error)}`, error);
+  }
+
+  render() {
+    const { children } = this.props;
+    const { errorCode, hasError } = this.state;
+    if (hasError) {
+      return <div>Unexpected error. Error code: {errorCode}</div>;
+    }
+    return <>{children}</>;
+  }
+}
+
+const BlowupIndex = () => {
+  return (
+    <ErrorBoundary>
+      <h1>Test Rollbar error reporting</h1>
+      <ol>
+        <li>
+          <a href="/blowup-ssr">Test server-side error reporting</a>
+        </li>
+        <li>
+          <ComponentRenderBlowup />
+        </li>
+        <li>
+          <EventHandlerBlowup />
+        </li>
+      </ol>
+    </ErrorBoundary>
+  );
+};
+
+export default BlowupIndex;
+
+const ComponentRenderBlowup = () => {
+  const [isReady, setIsReady] = useState(false);
+  const handleClick = () => {
+    setIsReady(true);
+  };
+  if (isReady) {
+    throw new Error("client-side component render blowup");
+  }
+  return (
+    <div>
+      <button onClick={handleClick}>
+        Test client-side component rendering error reporting
+      </button>
+    </div>
+  );
+};
+
+const EventHandlerBlowup = () => {
+  const handleClick = () => {
+    throw new Error("client-side event handler blowup");
+  };
+  return (
+    <button onClick={handleClick}>
+      Test client-side event handler error reporting
+    </button>
+  );
+};
